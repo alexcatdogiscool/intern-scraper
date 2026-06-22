@@ -15,7 +15,7 @@ match against the database, if unique, add to db and notify, else, ignore
 
     database design
 
-job listing name, company , url of listing , date of open , date of close , have i marked this completed
+job listing name, company , url of listing , marked status(unmarked, applied, discarded)
 
 
 

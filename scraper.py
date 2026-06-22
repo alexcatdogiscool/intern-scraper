@@ -82,13 +82,55 @@ def scrape_prosple():
             
             job_id = href.rstrip("/").split("/")[-1]
             
-            print(full_url)
-        
-
+            #print(full_url)
+            
+            card = link.parent
+            for _ in range(6):
+                if card is None:
+                    continue
+                if len(card.get_text()) > 200:
+                    continue
+                card = card.parent
+                
+            # get the info
+            
+            salary = ""
+            if card:
+                salary_text = card.get_text()
+                match = re.search(r"NZD\s*[\d,]+(?:\s*[-–]\s*[\d,]+)?(?:\s*/\s*\w+)?", salary_text)
+                if match:
+                    # Also grab the "/Hour" or "/Year" suffix nearby
+                    suffix_match = re.search(
+                        r"(NZD\s*[\d,]+(?:\s*[-–]\s*[\d,]+)?)(\s*/\s*\w+)?",
+                        salary_text
+                    )
+                    salary = suffix_match.group(0).strip() if suffix_match else match.group(0)
+                    
+            #print(salary)
+            
+            url_fields = href.split("/")
+            
+            company_name = url_fields[2]
+            job_name = url_fields[-1]
+            
+            #print(company_name)
+            #print(job_name)
+            
+            jobs.append({
+                "job_name": job_name,
+                "company": company_name,
+                "url": full_url,
+                "status": "unmarked"
+            })
+    return jobs
 
 
 
 SCRAPER_FUNCS = [scrape_prosple]
 
+def get_scraper_funcs():
+    return SCRAPER_FUNCS
+
 if __name__ == "__main__":
-    scrape_prosple()
+    j = scrape_prosple()
+    print(j)

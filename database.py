@@ -31,7 +31,15 @@ def load_unmarked_jobs() -> list:
     """Return jobs that haven't been marked/actioned yet."""
     return [j for j in load_all_jobs() if j.get("status") == "unmarked"]
         
-        
+def update_status(job_name, comapny, new_status):
+    jobs = load_all_jobs()
+    for job in jobs:
+        if job["job_name"] == job_name and job["company"] == comapny:
+            job["status"] = new_status
+            break
+    
+    with open(ALL_JOBS_FILE, 'w') as f:
+        json.dump(jobs, f, indent=2)
         
 
 def get_unique_jobs(jobs: list) -> list:

@@ -1,0 +1,49 @@
+
+
+
+.job-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    padding: 16px;
+}
+
+.job {
+    color: black;
+    border-radius: 5px;
+    border: 2px solid brown;
+
+    
+    
+}
+
+.job-title {
+    color: black;
+    font-size: large;
+    border: 1px solid black;
+}
+
+.job-company {
+    color: black;
+    border: 1px solid black;
+    font: bold;
+}
+
+.buttons-div {
+    display: grid;
+    border: 1px solid black;
+    grid-template-columns: 1fr 1fr;
+
+}
+
+.button-applied {
+    background-color: green;
+}
+
+.button-discarded {
+    background-color: red;
+}
+
+.button-unmark {
+    background-color: yellow;
+}

@@ -10,7 +10,7 @@ function App() {
   const [jobs, set_jobs] = useState<Job[]>([])
   
   useEffect(() => {
-    fetch('http://192.168.0.111:5000/jobs', {
+    fetch('/jobs', {
       headers: { 'Cache-Control': 'no-cache' }
     })
       .then(res => res.json())
@@ -18,12 +18,12 @@ function App() {
   }, [])
 
   async function update_status(job: Job, status: String) {
-      await fetch('http://192.168.0.111:5000/jobs', {
+      await fetch('/jobs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ job_name: job.job_name, company: job.company, new_status:  status})
       })
-      fetch('http://192.168.0.111:5000/jobs', {
+      fetch('/jobs', {
         headers: { 'Cache-Control': 'no-cache' }
       })
         .then(res => res.json())

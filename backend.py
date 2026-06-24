@@ -1,10 +1,16 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import database
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='./intern-app/dist', static_url_path='')
 CORS(app)
+
+
+@app.route('/')
+def serve_react():
+    return send_from_directory(app.static_folder, 'index.html')
+
 
 @app.route("/jobs", methods=["GET", "POST"])
 def jobs():

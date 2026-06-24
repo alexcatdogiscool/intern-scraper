@@ -31,10 +31,10 @@ def load_unmarked_jobs() -> list:
     """Return jobs that haven't been marked/actioned yet."""
     return [j for j in load_all_jobs() if j.get("status") == "unmarked"]
         
-def update_status(job_name, comapny, new_status):
+def update_status(job_name, company, new_status):
     jobs = load_all_jobs()
     for job in jobs:
-        if job["job_name"] == job_name and job["company"] == comapny:
+        if job["job_name"] == job_name and job["company"] == company:
             job["status"] = new_status
             break
     

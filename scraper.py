@@ -220,15 +220,124 @@ def scrape_seek():
     print(f"  seek -> {len(all_jobs)} unique CS intern listings found")
     return all_jobs
 
+def scrape_linkedin():
+    import requests
+    import random
+ 
+    QUERY = {
+        "keyword":           "Software Engineer Intern",
+        "location":          "New Zealand",
+        "job_type":          "internship",
+        "experience_level":  "internship",
+        "date_since_posted": "past month",
+        "sort_by":           "recent",
+        "limit":             10,   # always keep this an int, never a string
+    }
+ 
+    DATE_MAP       = {"past month": "r2592000", "past week": "r604800", "24hr": "r86400"}
+    EXPERIENCE_MAP = {"internship": "1", "entry level": "2", "associate": "3",
+                      "senior": "4", "director": "5", "executive": "6"}
+    JOB_TYPE_MAP   = {"full time": "F", "full-time": "F", "part time": "P",
+                      "part-time": "P", "contract": "C", "temporary": "T",
+                      "volunteer": "V", "internship": "I"}
+    USER_AGENTS = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/119.0.0.0 Safari/537.36",
+    ]
+ 
+    # Guarantee limit is an int so comparisons never throw TypeError
+    limit = int(QUERY["limit"])
+ 
+    def _build_url(start):
+        base = "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?"
+        params = {}
+        if QUERY.get("keyword"):
+            params["keywords"] = QUERY["keyword"].strip().replace(" ", "+")
+        if QUERY.get("location"):
+            params["location"] = QUERY["location"].strip().replace(" ", "+")
+        if DATE_MAP.get(QUERY.get("date_since_posted", "").lower()):
+            params["f_TPR"] = DATE_MAP[QUERY["date_since_posted"].lower()]
+        if EXPERIENCE_MAP.get(QUERY.get("experience_level", "").lower()):
+            params["f_E"] = EXPERIENCE_MAP[QUERY["experience_level"].lower()]
+        if JOB_TYPE_MAP.get(QUERY.get("job_type", "").lower()):
+            params["f_JT"] = JOB_TYPE_MAP[QUERY["job_type"].lower()]
+        params["start"] = start
+        if QUERY.get("sort_by") == "recent":
+            params["sortBy"] = "DD"
+        return base + "&".join(f"{k}={v}" for k, v in params.items())
+ 
+    def _fetch_batch(start):
+        headers = {
+            "User-Agent": random.choice(USER_AGENTS),
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": "https://www.linkedin.com/jobs",
+            "X-Requested-With": "XMLHttpRequest",
+        }
+        resp = requests.get(_build_url(start), headers=headers, timeout=10)
+        if resp.status_code == 429:
+            raise Exception("rate limited — wait a few minutes before retrying")
+        if resp.status_code != 200:
+            raise Exception(f"HTTP {resp.status_code}")
+ 
+        soup = BeautifulSoup(resp.text, "html.parser")
+        jobs = []
+        for li in soup.find_all("li"):
+            position    = parse_text(li.find(class_="base-search-card__title"))
+            company     = parse_text(li.find(class_="base-search-card__subtitle"))
+            if not position or not company:
+                continue
+            url_tag     = li.find("a", class_="base-card__full-link")
+            job_url     = url_tag["href"] if url_tag else ""
+            job_name    = re.sub(r"[^a-z0-9]+", "-", f"{position}-{company}".lower()).strip("-")
+            company_slug = re.sub(r"[^a-z0-9]+", "-", company.lower()).strip("-")
+            jobs.append({"job_name": job_name, "company": company_slug,
+                         "url": job_url, "status": "unmarked"})
+        return jobs
+ 
+    all_jobs: list[dict] = []
+    seen_names: set[str] = set()
+    start = 0
+    BATCH_SIZE = 25
+ 
+    print(f"  linkedin -> fetching '{QUERY['keyword']}' in '{QUERY['location']}' (limit={limit})")
+ 
+    while True:
+        try:
+            batch = _fetch_batch(start)
+        except Exception as e:
+            print(f"  linkedin -> fetch error at start={start}: {e}")
+            break  # return whatever we collected so far
+ 
+        if not batch:
+            print(f"  linkedin -> empty page at start={start}, stopping")
+            break
+ 
+        for job in batch:
+            if job["job_name"] not in seen_names:
+                seen_names.add(job["job_name"])
+                all_jobs.append(job)
+ 
+        print(f"  linkedin -> collected {len(all_jobs)} so far")
+ 
+        if limit and len(all_jobs) >= limit:
+            all_jobs = all_jobs[:limit]
+            break
+ 
+        start += BATCH_SIZE
+        time.sleep(2 + random.random())
+ 
+    print(f"  linkedin -> {len(all_jobs)} listings found")
+    return all_jobs
 
-
-SCRAPER_FUNCS = [scrape_prosple, scrape_seek]
+SCRAPER_FUNCS = [scrape_prosple, scrape_seek, scrape_linkedin]
 
 def get_scraper_funcs():
     return SCRAPER_FUNCS
 
 if __name__ == "__main__":
-    j = scrape_seek()
+    j = scrape_linkedin()
     for job in j:
         print(job)
         print('\n')
